@@ -8,7 +8,7 @@
   "author": "Lars Willighagen",
   "license": "MIT",
   "dependencies": {
-    "cheerio": "^1.0.0-rc.10",
+    "jsdom": "^16.6.0",
     "node-fetch": "^2.6.1"
   }
 }
