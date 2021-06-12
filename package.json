@@ -1,0 +1,14 @@
+{
+  "private": true,
+  "name": "scrapers",
+  "version": "0.0.1",
+  "description": "Scrapers for larger sets of identification keys.",
+  "main": "index.js",
+  "keywords": [],
+  "author": "Lars Willighagen",
+  "license": "MIT",
+  "dependencies": {
+    "cheerio": "^1.0.0-rc.10",
+    "node-fetch": "^2.6.1"
+  }
+}
