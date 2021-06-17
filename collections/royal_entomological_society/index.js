@@ -5,7 +5,7 @@ const fetch = require('node-fetch');
 const { JSDOM } = require('jsdom');
 
 const BASE_URL = 'https://en.wikipedia.org/wiki/Royal_Entomological_Society_Handbooks'
-const CACHE_FILE = path.join(__dirname, 'royal_entomological_society.html')
+const CACHE_FILE = path.join(__dirname, 'cache.html')
 
 async function main () {
   let file

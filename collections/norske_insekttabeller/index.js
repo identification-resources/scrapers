@@ -5,7 +5,7 @@ const fetch = require('node-fetch');
 const { JSDOM } = require('jsdom');
 
 const BASE_URL = 'http://www.entomologi.no/journals/tabell/tabell.htm'
-const CACHE_FILE = path.join(__dirname, 'norske_insekttabeller.html')
+const CACHE_FILE = path.join(__dirname, 'cache.html')
 
 async function main () {
   let file
