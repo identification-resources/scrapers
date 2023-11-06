@@ -8,6 +8,7 @@
   "author": "Lars Willighagen",
   "license": "MIT",
   "dependencies": {
+    "@larsgw/formica": "^0.5.1",
     "jsdom": "^16.6.0",
     "node-fetch": "^2.6.1"
   }
