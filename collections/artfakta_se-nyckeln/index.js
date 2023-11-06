@@ -1,31 +1,70 @@
 const { promises: fs, existsSync: exists } = require('fs')
 const path = require('path')
 
-const fetch = require('node-fetch');
+const fetch = require('node-fetch')
+const Formica = require('@larsgw/formica')
 
-const BASE_URL = 'https://artfakta.se/api/keys/metadata'
+const BASE_URL = 'https://artfakta.se/api/keys/'
+
 const CACHE_FILE = path.join(__dirname, 'cache.json')
-
-async function main () {
-  let file
-  if (exists(CACHE_FILE)) {
-    console.error('Using cache...')
-    file = await fs.readFile(CACHE_FILE, 'utf8')
-  } else {
-    console.error('Fetching over HTTP...')
-    const response = await fetch(BASE_URL, { headers: { Accept: 'application/json' } })
-    file = await response.text()
-    await fs.writeFile(CACHE_FILE, file)
+let cache
+async function fetchText (url, options) {
+  if (!cache) {
+    if (exists(CACHE_FILE)) {
+      cache = JSON.parse(await fs.readFile(CACHE_FILE, 'utf8'))
+    } else {
+      cache = {}
+    }
   }
 
-  const keys = JSON.parse(file)
+  if (cache.hasOwnProperty(url)) {
+    // console.error('Using cache...')
+  } else {
+    console.error('Fetching over HTTP...')
+    cache[url] = await fetch(url, options).then(response => response.text())
+  }
 
+  return cache[url]
+}
+
+async function getKeys (url) {
+  const response = JSON.parse(await fetchText(url))
+  const links = response.records ? response.records.flatMap(records => records.children) : response.children
+  const keys = []
+  for (const link of links) {
+    if (link.type === 1) {
+      keys.push(JSON.parse(await fetchText(BASE_URL + link.id)))
+    } else if (link.type === 3) {
+      keys.push(...await getKeys(BASE_URL + link.id))
+    }
+  }
+  return keys
+}
+
+async function main () {
+  const catalog = await fetchText('https://identification-resources.github.io/assets/data/catalog.csv').then(file => Formica.catalog.loadData(file, 'catalog'))
+  const byArtnyckelId = {}
+  for (const work of catalog) {
+    if (work.has('fulltext_url')) {
+      for (const url of work.get('fulltext_url')) {
+        const match = url.match(/artnyckel\?keyId=(\d+)$/)
+        if (match) {
+          byArtnyckelId[match[1]] = work.get('id')
+        }
+      }
+    }
+  }
+
+  const keys = await getKeys(BASE_URL)
   for (const key of keys) {
-    const title = `${key.keyName} (${key.keySubName})`
-    const date = key.createdDate.split(' ')[0]
-    const url = `https://artfakta.se/artbestamning/taxon/${key.routePath}/artnyckel?keyId=${key.keyId}`
-    console.log(`${title}		${url}		online	${date}	ArtDatabanken	${key.keyDescription}	Artfakta Artnycklar\t							${key.keyLanguage}		key; matrix	${key.rootTaxonScientificName}	Europe, Sweden	TRUE	species`)
+    const id = byArtnyckelId[key.id] || ''
+    const title = `${key.name} (${key.subName})`
+    const date = key.createdDate.split('T')[0]
+    const url = `https://artfakta.se/artinformation/taxa/${key.taxonId}/artnyckel/${key.id}`
+    console.log(`${id}	${title}		${url}	${url}		online	${date}	ArtDatabanken	${key.description}	Artfakta Artnycklar\t							se		key; matrix	${key.subName}	Europe, Sweden	TRUE	species`)
   }
 }
 
-main().catch(console.error)
+main().catch(console.error).finally(() => {
+  return fs.writeFile(CACHE_FILE, JSON.stringify(cache, null, 2))
+})
