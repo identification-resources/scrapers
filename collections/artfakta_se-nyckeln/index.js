@@ -5,6 +5,7 @@ const fetch = require('node-fetch')
 const Formica = require('@larsgw/formica')
 
 const BASE_URL = 'https://artfakta.se/api/keys/'
+const RESOURCES_BASE = path.join(__dirname, 'resources')
 
 const CACHE_FILE = path.join(__dirname, 'cache.json')
 let cache
@@ -16,6 +17,7 @@ async function fetchText (url, options) {
       cache = {}
     }
   }
+  delete cache['https://identification-resources.github.io/assets/data/catalog.csv']
 
   if (cache.hasOwnProperty(url)) {
     // console.error('Using cache...')
@@ -42,18 +44,20 @@ async function getKeys (url) {
 }
 
 async function main () {
-  const catalog = await fetchText('https://identification-resources.github.io/assets/data/catalog.csv').then(file => Formica.catalog.loadData(file, 'catalog'))
+  const catalog = await fs.readFile('../../../catalog/catalog.csv', 'utf8').then(file => Formica.catalog.loadData(file, 'catalog'))
   const byArtnyckelId = {}
   for (const work of catalog) {
     if (work.has('fulltext_url')) {
       for (const url of work.get('fulltext_url')) {
-        const match = url.match(/artnyckel\?keyId=(\d+)$/)
+        const match = url.match(/artnyckel(?:\?keyId=|\/)(\d+)$/)
         if (match) {
           byArtnyckelId[match[1]] = work.get('id')
         }
       }
     }
   }
+
+  await fs.mkdir(RESOURCES_BASE, { recursive: true })
 
   const keys = await getKeys(BASE_URL)
   for (const key of keys) {
@@ -62,6 +66,9 @@ async function main () {
     const date = key.createdDate.split('T')[0]
     const url = `https://artfakta.se/artinformation/taxa/${key.taxonId}/artnyckel/${key.id}`
     console.log(`${id}	${title}		${url}	${url}		online	${date}	ArtDatabanken	${key.description}	Artfakta Artnycklar\t							se		key; matrix	${key.subName}	Europe, Sweden	TRUE	species`)
+
+    const taxa = JSON.parse(await fetchText(BASE_URL + key.id + '/taxa'))
+    await fs.writeFile(path.join(RESOURCES_BASE, id + '.txt'), taxa.items.map(item => item.scientificName || item.swedishName).join('\n'))
   }
 }
 
