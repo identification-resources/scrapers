@@ -65,7 +65,7 @@ async function main () {
     const title = `${key.name} (${key.subName})`
     const date = key.createdDate.split('T')[0]
     const url = `https://artfakta.se/artinformation/taxa/${key.taxonId}/artnyckel/${key.id}`
-    console.log(`${id}	${title}		${url}	${url}		online	${date}	ArtDatabanken	${key.description}	Artfakta Artnycklar\t							se		key; matrix	${key.subName}	Europe, Sweden	TRUE	species`)
+    console.log(`${id}	${title}		${url}	${url}		online	${date}	ArtDatabanken	${key.description}	Artfakta Artnycklar									sv-SE		key; matrix	${key.subName}			Europe, Sweden	TRUE	species`)
 
     const taxonList = JSON.parse(await fetchText(BASE_URL + key.id + '/taxa'))
     const taxa = taxonList.items.map(item => item.scientificName || item.swedishName).sort().filter((v, i, a) => a.indexOf(v) === i)
