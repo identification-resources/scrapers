@@ -67,8 +67,14 @@ async function main () {
     const url = `https://artfakta.se/artinformation/taxa/${key.taxonId}/artnyckel/${key.id}`
     console.log(`${id}	${title}		${url}	${url}		online	${date}	ArtDatabanken	${key.description}	Artfakta Artnycklar\t							se		key; matrix	${key.subName}	Europe, Sweden	TRUE	species`)
 
-    const taxa = JSON.parse(await fetchText(BASE_URL + key.id + '/taxa'))
-    await fs.writeFile(path.join(RESOURCES_BASE, id + '.txt'), taxa.items.map(item => item.scientificName || item.swedishName).join('\n'))
+    const taxonList = JSON.parse(await fetchText(BASE_URL + key.id + '/taxa'))
+    const taxa = taxonList.items.map(item => item.scientificName || item.swedishName).sort().filter((v, i, a) => a.indexOf(v) === i)
+    await fs.writeFile(path.join(RESOURCES_BASE, id + '.txt'), `---
+levels:
+  - species
+---
+
+` + taxa.join('\n') + '\n')
   }
 }
 
